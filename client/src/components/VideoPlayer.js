@@ -8,11 +8,12 @@ import { TextField, Button } from '@mui/material';
 function VideoPlayer ({socket, data, messages, setMessages}) {
   const [state, setState] = useState({url: '', error: false});
   const [url2, setUrl2] = useState('');
-  const [playerProps, setPlayerProps] = useState({playing: false, timeStamp: -5});
+  const [playerProps, setPlayerProps] = useState({playing: false, gotAMessage: false});
   // const [playing, setPlaying] = useState(false);
   const [playBackRate, setPlayBackRate] = useState(1);
   // const [lastTimeStamp, setTimeStamp] = useState(-5);
   var playerRef = useRef();
+  console.log('reredering', playerProps)
   const loadUrl = () => {
     socket.emit('new_url', {...data, url: url2});
     setState({url: url2, error: false });
@@ -27,44 +28,65 @@ function VideoPlayer ({socket, data, messages, setMessages}) {
     });
 
     socket.on('play_video', (message_data) => {
-      console.log('got new play', message_data, data.userId, playerProps.playing)
+      console.log('got new play', message_data, data.userId, playerProps)
       // setMessages((prev) => ([...prev, {position: 'left', type: 'text', title: 'PinkTube Bot', text: `${message_data.userName} started playing`}]));
       if (message_data.userId !== data.userId) {
         playerRef.current.seekTo(message_data.timeStamp, 'seconds');
+        // setPlayerProps((prevState) => {
+        //   console.log('changing state in got new play')
+        //   return ({playing: true, gotAMessage: true}) 
+        // });
+        setTimeout(() => setPlayerProps((prevState) => ({...prevState, playing: true, gotAMessage: true})), 10);
+
       }
-        setPlayerProps((prevState) => ({playing: true, timeStamp: message_data.timeStamp}));
     });
 
     socket.on('pause_video', (message_data) => {
-      console.log('got new pause', message_data, data.userId, playerProps.playing)
+      console.log('got new pause', message_data, data.userId, playerProps)
       // setMessages((prev) => ([...prev, {position: 'left', type: 'text', title: 'PinkTube Bot', text: `${message_data.userName} paused`}]));
 
       if (message_data.userId !== data.userId) {
+        // setPlayerProps((prevState) => ({...prevState, playing: false, gotAMessage: true}));
+        setTimeout(() => setPlayerProps((prevState) => ({...prevState, playing: false, gotAMessage: true})), 10);
       }
-        setPlayerProps((prevState) => ({...prevState, playing: false}));
     });
 
   }, [socket]);
 
+  // useEffect(() => ,[state])
+
   const handlePlay = () => {
     const timeStamp = playerRef.current.getCurrentTime();
-    console.log('aaaa', playerProps.timeStamp, timeStamp);
-    if (Math.abs(playerProps.timeStamp - timeStamp) > 3) {
+    console.log('aaaa', playerProps.timeStamp, timeStamp, 'at play');
+    if (playerProps.gotAMessage === false) {
       console.log('At handle play');
       socket.emit('play_video', {...data , timeStamp: timeStamp});
     }
-    // setPlayerProps((prevState) => ({playing: true, timeStamp: timeStamp}));
+    setTimeout(() => setPlayerProps((prevState) => ({...prevState, gotAMessage: false})), 10);
+    // setPlayerProps((prevState) => ({...prevState, gotAMessage: false}));
   }
-  
+
   const handlePause = () => {
     const timeStamp = playerRef.current.getCurrentTime();
-    console.log('aaaa', playerProps.timeStamp, timeStamp);
-    // if (Math.abs(timeStamp - lastTimeStamp) > 3) {
+    console.log('aaaa', playerProps.timeStamp, timeStamp, 'at pause');
+    if (playerProps.gotAMessage === false) {
       console.log('At handle pause');
       socket.emit('pause_video', data);
-    // }
-      // setPlayerProps((prevState) => ({...prevState, playing: false}));
+    }
+    setTimeout(() => setPlayerProps((prevState) => ({...prevState, gotAMessage: false})), 10);
   }
+
+  const handleStart = () => {
+    const timeStamp = playerRef.current.getCurrentTime();
+    console.log('aaaa', playerProps.timeStamp, timeStamp, 'at pause');
+    if (playerProps.gotAMessage === false) {
+      console.log('At handle pause');
+      socket.emit('pause_video', data);
+    }
+    setTimeout(() => setPlayerProps((prevState) => ({...prevState, gotAMessage: false})), 10);
+  }
+
+
   return (
     <section className='video_player'>
       <ReactPlayer 
@@ -78,7 +100,6 @@ function VideoPlayer ({socket, data, messages, setMessages}) {
         controls={true}
         onPause={handlePause}
         onPlay={handlePlay}
-        onStart={()=> setPlayerProps((prev)=>({...prev, playing: true}))}
         />
       <TextField error={state.error} id="outlined-basic" className='url_input' label="Enter URL" value={url2 || ''} variant="outlined" onChange={e => setUrl2(e.target.value)}/>
       <Button onClick={loadUrl} variant="contained">Load</Button>
