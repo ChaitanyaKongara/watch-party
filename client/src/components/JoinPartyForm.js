@@ -26,11 +26,12 @@ function JoinPartyForm() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const handleJoinParty = (e) => {
+    let uname = userName.trim()
     e.preventDefault();
     setStatus('loading');
     axios.post('/joinParty', {roomId: roomId, partyType: partyType, password: password})
       .then(res => {
-        navigate('/party', {state: {userName: userName, partyType: partyType, password: password, roomId: roomId, userId: res.data.userId}});
+        navigate('/party', {state: {userName: uname , partyType: partyType, password: password, roomId: roomId, userId: res.data.userId}});
       })
       .catch(err => setStatus('error'))
   }
@@ -42,17 +43,17 @@ function JoinPartyForm() {
       <p>Join Party!</p>
       <form onSubmit={handleJoinParty}>
         {status === 'error' && <h3>No such room</h3>}
-        <TextField id="outlined-basic" label="Room Id" variant="outlined" onChange={(e) => setRoomId(e.target.value)}/>
-        <TextField id="outlined-basic" label="Username" variant="outlined" onChange={(e) => setUserName(e.target.value)}/>
+        <TextField id="outlined-basic" label="Room Id" variant="outlined" required={true} onChange={(e) => setRoomId(e.target.value)}/>
+        <TextField id="outlined-basic" label="Username" variant="outlined" required={true} onChange={(e) => setUserName(e.target.value)}/>
         <RadioGroup
           row
           name="radio-buttons-group"
           value={partyType}
-          onChange={(e) => setPartyType(e.target.value)}>
+          onChange={(e) => setPartyType(e.target.value.trim())}>
           <FormControlLabel value="public" control={<Radio />} label="Public" />
           <FormControlLabel value="private" control={<Radio />} label="Private" />
         </RadioGroup>
-        {partyType === 'private' && <> <TextField id="outlined-basic" label="password" variant="outlined" onChange={(e) => setPassword(e.target.value)}/></>}
+        {partyType === 'private' && <> <TextField id="outlined-basic" label="password" required={true} variant="outlined" onChange={(e) => setPassword(e.target.value)}/></>}
         <br/>
         <Button type="submit" variant="contained">Join</Button>
 
