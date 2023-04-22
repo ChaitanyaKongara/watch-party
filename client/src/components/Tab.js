@@ -54,7 +54,7 @@ function a11yProps(index) {
 
 export default function BasicTabs({socket, data, messages, setMessages}) {
   const [value, setValue] = React.useState(0);
-
+  console.log(data);
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
@@ -99,7 +99,7 @@ export default function BasicTabs({socket, data, messages, setMessages}) {
             </ListItemAvatar>
             <ListItemText primary={data.roomId} secondary="Room Id" />
           </ListItem>
-          {data.roomType === 'private' && 
+          {data.partyType === 'private' && 
             <ListItem>
               <ListItemAvatar>
                 <Avatar>

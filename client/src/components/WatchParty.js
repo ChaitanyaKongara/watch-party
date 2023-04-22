@@ -16,7 +16,7 @@ function WatchParty() {
     withCredentials: true,
   });
   useEffect(() => {
-    socket.connect();
+    // socket.connect();
     console.log('sending join room msg');
     socket.emit('join_room', location.state);
     return (() => socket.close());
@@ -27,10 +27,6 @@ function WatchParty() {
       console.log('got new message', message_data)
       setMessages(prevMessages => [...prevMessages, {position:(message_data.userId === location.state.userId ? 'right' : 'left'), type:'text', title: message_data.userName, text: message_data.message}]); 
       console.log(messages);
-    });
-
-    socket.on('new_video_message', (message_data) => {
-      
     });
   }, [socket]);
 
