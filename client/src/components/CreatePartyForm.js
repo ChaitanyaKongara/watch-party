@@ -39,7 +39,7 @@ function CreatePartyForm() {
     <div className="party_form"> 
       <p>Create Party!</p> 
       <form onSubmit={handleCreateParty}>
-        <TextField id="outlined-basic" label="Username" variant="outlined" onChange={(e) => setUserName(e.target.value)}/>
+        <TextField id="outlined-basic" label="Username" required={true} variant="outlined" onChange={(e) => setUserName(e.target.value)}/>
         <RadioGroup
           row
           name="radio-buttons-group"
