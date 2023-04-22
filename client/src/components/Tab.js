@@ -16,11 +16,13 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
+import Button from '@mui/material/Button';
+import {useNavigate} from 'react-router-dom';
+
 
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
-
   return (
     <div
       style={{height: "100%"}}
@@ -52,13 +54,14 @@ function a11yProps(index) {
   };
 }
 
-export default function BasicTabs({socket, data, messages, setMessages}) {
+export default function BasicTabs({socket, data, messages, setMessages, users, setUsers}) {
   const [value, setValue] = React.useState(0);
   console.log(data);
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
-  var users = ["chaitanya", "abhinav", "guru", "nv sree harsa","chaitanya", "abhinav", "guru", "nv sree harsa","chaitanya", "abhinav", "guru", "nv sree harsa"]; 
+  const navigate = useNavigate();
+  // var users = ["chaitanya", "abhinav", "guru", "nv sree harsa","chaitanya", "abhinav", "guru", "nv sree harsa","chaitanya", "abhinav", "guru", "nv sree harsa"]; 
   return (
     <Box sx={{ width: '25%', height: '80%', backgroundColor: '#F4F4F4' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider'}}>
@@ -75,7 +78,8 @@ export default function BasicTabs({socket, data, messages, setMessages}) {
       </TabPanel>
       <TabPanel value={value} index={1}>
         <List sx={{ width: '100%', maxWidth: 400, height: '80%', overflowY: "scroll", bgcolor: 'background.paper' }}>
-          {users.map(x => {
+          {Object.keys(users).map(key => {
+            console.log(key, users[key], "inside")
             return (
               <ListItem>
                 <ListItemAvatar>
@@ -83,7 +87,7 @@ export default function BasicTabs({socket, data, messages, setMessages}) {
                     <AccountCircleIcon />
                   </Avatar>
                 </ListItemAvatar>
-                <ListItemText primary={x} secondary="Host" />
+                <ListItemText primary={users[key]}  />
               </ListItem>
             );
           })}
@@ -108,6 +112,7 @@ export default function BasicTabs({socket, data, messages, setMessages}) {
               </ListItemAvatar>
               <ListItemText primary={data.password} secondary="Password" />
             </ListItem>}
+          <Button style={{ marginTop: '5%', marginLeft: '10%' }} onClick={() => navigate('/')} variant="contained">Leave Party</Button>
         </List>
       </TabPanel>
     </Box>

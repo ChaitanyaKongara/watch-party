@@ -4,7 +4,7 @@ const server = require('http').createServer(app);
 const { Server } = require("socket.io");
 var Mutex = require('async-mutex').Mutex;
 
-var whiteList = ["http://localhost:3000", "http://192.168.240.91:3000", "http://10.1.35.69:3000"]
+var whiteList = ["http://localhost:3000", "http://192.168.240.91:3000", "http://10.1.35.69:3000", "http://10.1.36.34:3000"]
 
 const io = new Server(server, {
   cors: {
@@ -59,25 +59,25 @@ io.on('connection', (socket) => {
     if (data.partyType === 'public') {
       let release = await publicLock.acquire();
       if (data.roomId in publicRooms) {
-        publicRooms[data.roomId]['users'].push([data.userName, data.userId]);
+        publicRooms[data.roomId]['users'][data.userId] = data.userName;
         socket.emit("new_url", {...data, url: publicRooms[data.roomId]['url'], userId: 'bot'})
 
       } else {
         publicRooms[data.roomId] = {
-          users: [[data.userName, socket.id]],
+          users: {[data['userId']]: data.userName},
           messages: [],
           url: ''
         };
       }
       release();
     } else {
-      let release = await publicLock.acquire();
+      let release = await privateLock.acquire();
       if (data.roomId in privateRooms) {
-        privateRooms[data.roomId]['users'].push([data.userName, socket.id]);
+        privateRooms[data.roomId]['users'][data.userId] = data.userName;
         socket.emit("new_url", {...data, url: privateRooms[data.roomId]['url'], userId: 'bot'})
       } else {
         privateRooms[data.roomId] = {
-          users: [[data.userName, data.userId]],
+          users: {[data.userId] : data.userName},
           messages: [],
           password: data.password,
           url: ''
@@ -86,6 +86,7 @@ io.on('connection', (socket) => {
       release();
     }
     socket.join(data.roomId);
+    io.to(data.roomId).emit("new_users", (data.partyType === 'public' ? publicRooms[data.roomId]['users'] : privateRooms[data.roomId]['users']))
     console.log('updated rooms', socket.rooms, publicRooms, privateRooms);
   });
 
@@ -112,15 +113,29 @@ io.on('connection', (socket) => {
       publicRooms[message_data.roomId]['url'] = message_data.url
       release();
     } else {
-      let release = await publicLock.acquire();
+      let release = await privateLock.acquire();
       privateRooms[message_data.roomId]['url'] = message_data.url
       release();
     }
     io.to(message_data.roomId).emit("new_url", message_data);
   });
 
+  socket.on('goodbye', async (message_data) => {
+    console.log('at goodbye')
+    if (message_data.partyType === 'public') {
+      let release = await publicLock.acquire();
+      delete publicRooms[message_data.roomId]['users'][message_data.userId];
+      release();
+    } else {
+      let release = await privateLock.acquire();
+      delete privateRooms[message_data.roomId]['users'][message_data.userId];
+      release();
+    }
+    io.to(message_data.roomId).emit("new_users", (message_data.partyType === 'public' ? publicRooms[message_data.roomId]['users'] : privateRooms[message_data.roomId]['users']))
+  })
+
   socket.on('disconnect', () => {
-    console.log('user disconnected', socket.id);
+    console.log('user disconnected', socket.id, publicRooms);
   });
 });
 
