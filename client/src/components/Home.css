@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500&display=swap');
+.App, .home {
+    display: flex;
+    align-items: center;
+    /* justify-content: center; */
+    flex-direction: column;
+}
+.home {
+    top: 10%;
+}
+.buttons_div {
+    height: 15%;
+    width: 15%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    /* background-color: brown; */
+    box-shadow: 1px 5px 5px 5px rgb(204, 191, 191);
+    border-radius: 5px;
+    min-width: 100px;
+    min-height: 100px;
+}
+.home .home_heading {
+    font-size: 100px;
+    width: 50%;
+    color:rgb(119, 133, 136);
+    text-align: center;
+    font-weight: 1000; 
+    font-family: 'Caveat', cursive !important;
+}
+
+.home button {
+    width: 60%;
+    background-color: black;
+    font-weight: 700;
+    border: solid;
+    border-color: #7a7a74;
+    border-width: 3px;
+    border-radius: 10px;
+}
+
+.home button:hover {
+    background-color: #f4f4f4;
+    border-color: #222222;
+    color: black;
+}
+
+.text-box {
+    width: 80%;
+}

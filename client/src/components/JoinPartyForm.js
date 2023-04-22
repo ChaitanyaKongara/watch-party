@@ -1,7 +1,13 @@
 import React, {useState} from "react";
 import ReactLoading from 'react-loading';
 import axios from '../axiosConfig.js';
-import {useNavigate} from 'react-router-dom'
+import {useNavigate} from 'react-router-dom';
+import TextField from '@mui/material/TextField';
+import RadioGroup from '@mui/material/RadioGroup';
+import Radio from '@mui/material/Radio';
+import Button from '@mui/material/Button';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import './partyForms.css';
 
 const loadingStyle = {
   position: 'inherit',
@@ -15,39 +21,43 @@ const loadingStyle = {
 function JoinPartyForm() {
   const [status, setStatus] = useState('');
   const [userName, setUserName] = useState('');
+  const [roomId, setRoomId] = useState('');
   const [partyType, setPartyType] = useState('public');
-  const [passcode, setPasscode] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const handleJoinParty = (e) => {
     e.preventDefault();
     setStatus('loading');
-    axios.post('/joinParty', {partyType: partyType, passcode: passcode})
-          .then(res => {
-            navigate('/party', {state: {userName: userName, partyType: partyType, passcode: passcode, roomId: res.data.roomId}});
-          })
-          .catch(err => setStatus(''))
-    console.log(userName, partyType, passcode, `${process.env.REACT_APP_SERVER_IP}:4000/joinParty`);
+    axios.post('/joinParty', {roomId: roomId, partyType: partyType, password: password})
+      .then(res => {
+        navigate('/party', {state: {userName: userName, partyType: partyType, password: password, roomId: roomId, userId: res.data.userId}});
+      })
+      .catch(err => setStatus('error'))
   }
   if (status === 'loading') {
     return <ReactLoading style={loadingStyle} type={"spin"} color="000"/>
   }
   return (
-    <div> 
-      Join Party!!
+    <div className="party_form"> 
+      <p>Join Party!</p>
       <form onSubmit={handleJoinParty}>
-        <label>
-          UserName:
-          <input type="text" onChange={(e) => setUserName(e.target.value)}/>
-          Party Type:
-          <select value={partyType} onChange={(e) => setPartyType(e.target.value)}>
-            <option value="public">Public Party</option>
-            <option value="private">Private Party</option>
-          </select>
-          {partyType === 'private' && <>passcode: <input type="text" onChange={(e) => setPasscode(e.target.value)}/></>}
-        </label>
-        <input type="submit" value="Join" />
+        {status === 'error' && <h3>No such room</h3>}
+        <TextField id="outlined-basic" label="Room Id" variant="outlined" onChange={(e) => setRoomId(e.target.value)}/>
+        <TextField id="outlined-basic" label="Username" variant="outlined" onChange={(e) => setUserName(e.target.value)}/>
+        <RadioGroup
+          row
+          name="radio-buttons-group"
+          value={partyType}
+          onChange={(e) => setPartyType(e.target.value)}>
+          <FormControlLabel value="public" control={<Radio />} label="Public" />
+          <FormControlLabel value="private" control={<Radio />} label="Private" />
+        </RadioGroup>
+        {partyType === 'private' && <> <TextField id="outlined-basic" label="password" variant="outlined" onChange={(e) => setPassword(e.target.value)}/></>}
+        <br/>
+        <Button type="submit" variant="contained">Join</Button>
+
       </form>
-    </div>
+    </div> 
   )
 }
 
