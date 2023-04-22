@@ -2,18 +2,29 @@ const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const { Server } = require("socket.io");
+var Mutex = require('async-mutex').Mutex;
+
+var whiteList = ["http://localhost:3000", "http://192.168.240.91:3000", "http://10.1.35.69:3000"]
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: function (origin, callback) {
+      if (whiteList.indexOf(origin) !== -1) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true
   }
 });
 const port = 4000;
+const privateLock = new Mutex(), publicLock = new Mutex();
 var privateRooms = {}, publicRooms = {};
 
-const getRandomId = () => {
+const getRandomId = (idLength = 10) => {
   var id = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqrstuvwxyz_0123456789', idLength = 10;
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqrstuvwxyz_0123456789';
   const charactersLength = characters.length;
   for (let i = 0; i < idLength; i++) {
     id += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -23,9 +34,15 @@ const getRandomId = () => {
 
 const cors = require('cors');
 const corsOptions ={
-    origin:'http://localhost:3000', 
-    credentials:true,            //access-control-allow-credentials:true
-    optionSuccessStatus:200
+  origin: function (origin, callback) {
+    if (whiteList.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }, 
+  credentials:true,            //access-control-allow-credentials:true
+  optionSuccessStatus:200
 }
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -37,31 +54,70 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log('a user connected', socket.id);
 
-  socket.on('join_room', (room) => {
-    console.log('at join_room');
-    if (room.type ===' public') {
-      if (room.id in publicRooms) {
-        publicRooms[room.id]['users'].push([room.userName, socket.id]);
+  socket.on('join_room', async (data) => {
+    console.log('at join_room', data);
+    if (data.partyType === 'public') {
+      let release = await publicLock.acquire();
+      if (data.roomId in publicRooms) {
+        publicRooms[data.roomId]['users'].push([data.userName, data.userId]);
+        socket.emit("new_url", {...data, url: publicRooms[data.roomId]['url'], userId: 'bot'})
+
       } else {
-        publicRooms[room.id] = {
-          users: [[room.userName, socket.id]],
-          messages: []
+        publicRooms[data.roomId] = {
+          users: [[data.userName, socket.id]],
+          messages: [],
+          url: ''
         };
       }
+      release();
     } else {
-      if (room.id in privateRooms) {
-        privateRooms[room.id]['users'].push([room.userName, socket.id]);
+      let release = await publicLock.acquire();
+      if (data.roomId in privateRooms) {
+        privateRooms[data.roomId]['users'].push([data.userName, socket.id]);
+        socket.emit("new_url", {...data, url: privateRooms[data.roomId]['url'], userId: 'bot'})
       } else {
-        privateRooms[room.id] = {
-          users: [[room.userName, socket.id]],
-          messages: []
+        privateRooms[data.roomId] = {
+          users: [[data.userName, data.userId]],
+          messages: [],
+          password: data.password,
+          url: ''
         };
       }
+      release();
     }
-    socket.join(room.id + room.type);
+    socket.join(data.roomId);
+    console.log('updated rooms', socket.rooms, publicRooms, privateRooms);
   });
 
-  socket.emit('message', 'hello from server');
+  socket.on('new_message', (message_data) => {
+    console.log('received msg', message_data);
+
+    io.to(message_data.roomId).emit("new_message", message_data);
+  });
+
+  socket.on('play_video', (message_data) => {
+    console.log('At play video');
+    io.to(message_data.roomId).emit("play_video", message_data);
+  });
+
+  socket.on('pause_video', (message_data) => {
+    console.log('At pause video')
+    io.to(message_data.roomId).emit("pause_video", message_data);
+  });
+
+  socket.on('new_url', async (message_data) => {
+    console.log('url change');
+    if (message_data.partyType === 'public') {
+      let release = await publicLock.acquire();
+      publicRooms[message_data.roomId]['url'] = message_data.url
+      release();
+    } else {
+      let release = await publicLock.acquire();
+      privateRooms[message_data.roomId]['url'] = message_data.url
+      release();
+    }
+    io.to(message_data.roomId).emit("new_url", message_data);
+  });
 
   socket.on('disconnect', () => {
     console.log('user disconnected', socket.id);
@@ -69,7 +125,7 @@ io.on('connection', (socket) => {
 });
 
 app.post('/joinParty', (req, res) => {
-  var status_code = 200;
+  var status_code = 404;
   if (req.body.partyType == 'private') {
     if (req.body.roomId in privateRooms) {
       if (privateRooms[req.body.roomId]['password'] === req.body.password) {
@@ -81,14 +137,16 @@ app.post('/joinParty', (req, res) => {
       status_code = 200;
     }
   }
-  console.log('got hit at join party api', req.body);
-  res.status(status_code).end();
+  userId = getRandomId(6);
+  console.log('got hit at join party api', req.body, publicRooms, privateRooms);
+  res.status(status_code).send({userId: userId});
 });
 
 app.post('/createParty', (req, res) => {
   roomId = getRandomId();
-  console.log('got hit at create party api');
-  res.send(roomId);
+  userId = getRandomId(6);
+  console.log('got hit at create party api', roomId);
+  res.send({roomId: roomId, userId: userId});
 });
 
 

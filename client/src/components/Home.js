@@ -3,31 +3,20 @@ import Popup from 'reactjs-popup';
 import 'reactjs-popup/dist/index.css';
 import CreatePartyForm from "./CreatePartyForm";
 import JoinPartyForm from "./JoinPartyForm";
-
-
-const setRandomSessionId = (setCookie) => {
-  var id = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', idLength = 10;
-  const charactersLength = characters.length;
-  for (let i = 0; i < idLength; i++) {
-    id += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  console.log(id);
-  setCookie("sessionId", id);
-}
+import Button from '@mui/material/Button';
+import "./Home.css";
 
 function Home(props) {
-  useEffect(() => {
-    console.log('here');
-    if (!props.getCookie('sessionId')) {
-      setRandomSessionId(props.setCookie);
-    }
-  }, [props]);
   return (
-    <>
-      <Popup trigger={<button> Join</button>} modal={true} children={JoinPartyForm} />
-      <Popup trigger={<button> Create</button>} modal={true} children={CreatePartyForm} />
-    </>
+    <div className="home">
+      <div className="home_heading">
+      <p>Get the party started!</p>
+      </div>
+      <div className="buttons_div">
+        <Popup trigger={<Button variant="contained">Join</Button>} modal={true} children={JoinPartyForm} />
+        <Popup trigger={<Button variant="contained">Create</Button>} modal={true} children={CreatePartyForm} />
+      </div>
+    </div >
   )
 }
 
