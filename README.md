@@ -1,18 +1,27 @@
 # Watch Party
-A virtual Watch Party Application that is built using React.js, Express.js, socket.io
+A Virtual Watch Party Application that is built using React.js, Express.js, and socket.io.
 
-# Client
+![Watch Party App](./demo.png)
 
-Run the following commands
+## Features
+
+- Synced playback across all users
+- Public and Private rooms
+- Chat
+- Members in the party
+
+## Client
+
+Run the following commands to start the frontend server
 ```bash
 cd client/
 npm i 
 npm start
 ```
 
-# Server
+## Server
 
-Run the following commands
+Run the following commands to start the backend server.
 ```bash
 cd server/
 npm i 
